@@ -12,7 +12,7 @@ class VehicleGenerator:
 
     def __set_default_config(self):
         self.vehicles = [(1, {})]
-        self.vehicle_rate = 10
+        self.vehicle_rate = 22
         self.last_added_time = 0
 
     def __init_properties(self):
@@ -29,7 +29,7 @@ class VehicleGenerator:
     def update(self, simulation):
         if((simulation.time - self.last_added_time) >= (60 / self.vehicle_rate)):
             road = simulation.roads[self.upcoming_vehicle.path[0]]      
-            if(len(road.vehicles) == 0 or simulation.vehicles[road.vehicles[-1]].x > self.upcoming_vehicle.s0 + self.upcoming_vehicle.l):
+            if(len(road.vehicles) == 0 or road.vehicles[-1].x > self.upcoming_vehicle.s0 + self.upcoming_vehicle.length):
                 simulation.set_vehicles(self.upcoming_vehicle)
                 self.last_added_time = simulation.time
             self.upcoming_vehicle = self.__generate_vehicle()

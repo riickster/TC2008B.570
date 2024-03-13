@@ -18,7 +18,7 @@ class Simulation:
     
     def __generate_websocket(self):
         self.ws = websocket.WebSocket()
-        self.ws.connect("ws://localhost:1123")
+        self.ws.connect("ws://localhost:1123/?uid=python_client")
 
     def websocket_sender(self, data):
         try:
@@ -43,7 +43,7 @@ class Simulation:
 
     def set_traffic_light(self, roads):
         roads = [[self.roads[i] for i in road_group] for road_group in roads]
-        self.traffic_lights.append(TrafficLight(roads))
+        self.traffic_lights.append(TrafficLight(roads, self.websocket_sender))
 
     def run(self):
         self.update()
@@ -69,6 +69,7 @@ class Simulation:
                     vehicle.current_road_index += 1
                     self.roads[vehicle.path[vehicle.current_road_index]].vehicles.append(road.vehicles[0])
                 vehicle.x = 0
+                self.websocket_sender({"action": "remove_vehicle", "data": [{"id": str(road.vehicles[0].id)}]})
                 road.vehicles.popleft()
         
         self.time += self.delta_time

@@ -132,7 +132,6 @@ class Window:
                 vehicle_coordinates.append({"id": str(vehicle.id), "x": position[0], "y": position[1], "heading": math.degrees(heading)})
         if(len(vehicle_coordinates) > 0):
             self.simulation.websocket_sender({"action": "update_vehicles", "data": vehicle_coordinates})
-            # print(vehicle_coordinates)
 
     def __apply_transformation(self):
         screen_center = dpg.create_translation_matrix([self.__canvas_width/2, self.__canvas_height/2, -0.01])

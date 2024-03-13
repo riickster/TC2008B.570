@@ -3,7 +3,13 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - CarSpawner
+  - Series_1_Red
+  - Series_1_Green
+  - Series_2_Red
+  - Series_2_Green
+  - TrafficController
   layers:
   - Default
   - TransparentFX

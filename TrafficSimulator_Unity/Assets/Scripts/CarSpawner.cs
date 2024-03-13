@@ -27,23 +27,32 @@ public class Vehicle
 public class CarSpawner : MonoBehaviour
 {
     public List<Vehicle> vehicle_list = new List<Vehicle>();
-    public GameObject vehiclePrefab;
+    // public GameObject vehiclePrefab;
+
+    public List<GameObject> prefabs;
 
     public void GenerateVehicle(string id){
         vehicle_list.Add(new Vehicle(id, -1000, -1000));
-        var car = Instantiate(vehiclePrefab, new Vector3(-1000, 0, -1000), Quaternion.identity);
+        var car = Instantiate(prefabs[Random.Range(0, 4)], new Vector3(-1000, 0, -1000), Quaternion.identity);
         car.name = id;
     }
 
+    public void DeleteVehicle(string vehicle_id){
+        GameObject car = GameObject.Find(vehicle_id);
+        Destroy(car);
+    }
+
     public void updateVehicle(string vehicle_id, float n_x, float n_z, float heading){
-        if(vehicle_list.Count > 0){
+        if(vehicle_list.Count != 0){
             GameObject car = GameObject.Find(vehicle_id);
             Vehicle vehicle_obj = vehicle_list.FirstOrDefault(i => i.id == vehicle_id);
 
-            vehicle_obj.update_X(n_x);
-            vehicle_obj.update_Z(-n_z);
-            car.transform.position = new Vector3(vehicle_obj.x, 0, vehicle_obj.z);
-            car.transform.rotation = Quaternion.Euler(0, heading+90, 0);
+            if(vehicle_obj != null){
+                vehicle_obj.update_X(n_x);
+                vehicle_obj.update_Z(-n_z);
+                car.transform.position = new Vector3(vehicle_obj.x, 0, vehicle_obj.z);
+                car.transform.rotation = Quaternion.Euler(0, heading+90, 0);
+            }
         }
     }
 }

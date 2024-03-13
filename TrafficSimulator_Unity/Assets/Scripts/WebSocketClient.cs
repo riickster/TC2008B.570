@@ -17,9 +17,8 @@ public class VehicleData
 public class WebSocketClient : MonoBehaviour
 {
     CarSpawner carSpawner;
-    WebSocket ws;
-
-    public GameObject playerPrefab;    
+    TrafficLightController trafficController;
+    WebSocket ws; 
 
     private readonly ConcurrentQueue<Action> _actions = new ConcurrentQueue<Action>();
 
@@ -27,10 +26,10 @@ public class WebSocketClient : MonoBehaviour
     {   
         
         carSpawner = GameObject.FindGameObjectWithTag("CarSpawner").GetComponent<CarSpawner>();
+        trafficController = GameObject.FindGameObjectWithTag("TrafficController").GetComponent<TrafficLightController>();
 
-        ws = new WebSocket("ws://localhost:1123");
+        ws = new WebSocket("ws://localhost:1123/?uid=unity_client");
         ws.OnMessage += (sender, e) => {
-            // Debug.Log(e.Data);
 
             Dictionary<string, object> jsonDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(e.Data);
 
@@ -38,21 +37,29 @@ public class WebSocketClient : MonoBehaviour
 
             switch (action_json){
                 case "add_vehicle":
-                    var dataObject = jsonDict["data"];
-                    var vehicleData = JsonConvert.DeserializeObject<VehicleData>(dataObject.ToString());
-                    string vehicleId = vehicleData.id;
+                    var dataObject_add = jsonDict["data"];
+                    var vehicleData_add = JsonConvert.DeserializeObject<VehicleData>(dataObject_add.ToString());
+                    string vehicleId_add = vehicleData_add.id;
 
-                    // Debug.Log(vehicleId);
-                    _actions.Enqueue(() => carSpawner.GenerateVehicle(vehicleId));
+                    _actions.Enqueue(() => carSpawner.GenerateVehicle(vehicleId_add));
+                    break;
+                case "remove_vehicle":
+                    var dataObject_remove = jsonDict["data"];
+                    var vehicleData_remove = JsonConvert.DeserializeObject<VehicleData>(dataObject_remove.ToString());
+                    string vehicleId_remove= vehicleData_remove.id;
+
+                    _actions.Enqueue(() => carSpawner.DeleteVehicle(vehicleId_remove));
                     break;
                 case "update_vehicles":
                     List<VehicleData> dataList = JsonConvert.DeserializeObject<List<VehicleData>>(jsonDict["data"].ToString());
 
                     foreach (VehicleData data in dataList){
-                        // Debug.Log("ID: " + data.id + ", X: " + data.x + ", Y: " + data.y);
                         _actions.Enqueue(() => carSpawner.updateVehicle(data.id, data.x, data.y, data.heading));
                     }
 
+                    break;
+                case "update_lights_cycle":
+                    _actions.Enqueue(() => trafficController.UpdateLightCycle());
                     break;
                 default:
                     Debug.LogError("Unknown action: " + action_json);

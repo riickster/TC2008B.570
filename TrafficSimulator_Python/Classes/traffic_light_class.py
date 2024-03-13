@@ -1,8 +1,9 @@
 import datetime
 
 class TrafficLight:
-    def __init__(self, roads):
+    def __init__(self, roads, websocket_sender):
         self.roads = roads
+        self.websocket_sender = websocket_sender
 
         self.__init_properties()
         self.__set_default_config()
@@ -13,7 +14,7 @@ class TrafficLight:
                 road.set_traffic_signal(self, i)
                 
     def __set_default_config(self):
-        self.slow_distance = 50
+        self.slow_distance = 25
         self.slow_factor = 0.4
         self.stop_distance = 15
 
@@ -38,6 +39,8 @@ class TrafficLight:
             self.current_cycle_index = 0
 
         self.new_cycle_time = datetime.datetime.now() + datetime.timedelta(seconds=self.cycle_length)
+
+        self.websocket_sender({"action": "update_lights_cycle", "data": []})
 
         if(voted):
             self.voted = True
