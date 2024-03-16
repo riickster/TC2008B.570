@@ -1,149 +1,96 @@
 import uuid
 import logging
 from abc import ABC
-from math import sqrt
 from collections import deque
-from scipy.integrate import quad
 from scipy.spatial import distance
 from scipy.interpolate import interp1d
 from Classes.messaging_class import MessageBroker
 from numpy import arctan2, unwrap, linspace
 
+#* Defines a Road class that instanciates visually a road segment inside the map that also generates vehicles and adds direction and a destiny
 class Road(ABC):
     def __init__(self, points):
-        self.id = uuid.uuid4()
+        self.id = uuid.uuid4() # Generates a Unique ID for each Road 
 
         self.points = points
-        self.vehicles = deque()
+        self.vehicles = deque() # Generates a Double Eneded Queue due to the large ammount of pop and append operations
         
-        self.has_traffic_signal = False
-        self.executed_vote = False
+        self.has_traffic_light = False
         self.voting_started = False
 
-        self.message_broker = MessageBroker()
+        self.message_broker = MessageBroker() # Generates a new Instance of the Class MessageBroker for the road
 
         self.__set_functions()
 
     def __set_functions(self):
-        self.get_point = interp1d(linspace(0, 1, len(self.points)), self.points, axis=0, fill_value="extrapolate")
-        
-        headings = unwrap([arctan2(self.points[i+1][1] - self.points[i][1], self.points[i+1][0] - self.points[i][0]) for i in range(len(self.points)-1)])
-        if(len(headings) == 1):
+        self.get_point = interp1d(linspace(0, 1, len(self.points)), self.points, axis=0, fill_value="extrapolate")  # Interpolate points along the saved path
+
+        headings = unwrap([arctan2(self.points[i+1][1] - self.points[i][1], self.points[i+1][0] - self.points[i][0]) for i in range(len(self.points)-1)])  # Calculate headings between consecutive points
+        if(len(headings) == 1):  # If there is only one heading (straight line), set it as a constant function
             self.get_heading = lambda x: headings[0]
-        else:
+        else:  # If there are multiple headings (curved road), interpolate between them
             self.get_heading = interp1d(linspace(0, 1, len(self.points)-1), headings, axis=0, fill_value="extrapolate")
 
-        logging.basicConfig(filename='simulation.log', encoding='utf-8', level=logging.INFO, format='%(asctime)s | %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    
-    def __get_abs(self, t):
-        return sqrt(self.__get_dx(t)**2 + self.__get_dy(t)**2)
-    
-    def __get_dx(self, t):
-        return (2*t*(self.end[0]-2 * self.control[0] + self.start[0])) + (2*(self.control[0] - self.start[0]))
-    
-    def __get_dy(self, t):
-        return (2*t*(self.end[1]-2 * self.control[1] + self.start[1])) + (2*(self.control[1] - self.start[1]))
-    
-    def __get_x(self, t):
-        return (t**2 * self.end[0]) + (2*t*(1-t) * self.control[0]) + ((1-t)**2 * self.start[0])
-    
-    def __get_y(self, t):
-        return (t**2 * self.end[1]) + (2*t*(1-t) * self.control[1]) + ((1-t)**2 * self.start[1])
+        logging.basicConfig(filename='simulation.log', encoding='utf-8', level=logging.INFO, format='%(asctime)s | %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')  # Configure logging format and filename
     
     @property
-    def __get_traffic_signal_state(self):
-        if(self.has_traffic_signal):
-            return self.traffic_signal.get_current_cycle[self.traffic_signal_group]
+    def __get_traffic_light_state(self):
+        if(self.has_traffic_light):
+            return self.traffic_light.get_current_cycle[self.traffic_light_group] # Return the current state of the traffic signal for the assigned group
         return True
-    
-    def __get_t(self, a, target_length, epsilon): 
-        def get_interval_value(t):
-            integral_value, _ = quad(self.__get_abs, a, t)
-            return integral_value
-        
-        if(get_interval_value(1) < target_length):
-            return 1
-        
-        lower_bound = a
-        upper_bound = 1
-        mid_point = (lower_bound + upper_bound) / 2.0
-        interval_value = get_interval_value(mid_point)
-
-        while(abs(interval_value - target_length) > epsilon):
-            if(interval_value < target_length):
-                lower_bound = mid_point
-            else:
-                upper_bound = mid_point
-            mid_point = (lower_bound + upper_bound) / 2.0
-            interval_value = get_interval_value(mid_point)
-        return mid_point
     
     def get_length(self):
         length = 0
-        for i in range(len(self.points)-1):
-            length += distance.euclidean(self.points[i], self.points[i+1])
+        for i in range(len(self.points)-1): # Iterate over each pair of consecutive points.
+            length += distance.euclidean(self.points[i], self.points[i+1]) # Add the Euclidean distance between consecutive points to the total length
         return length
     
-    def get_normalized_path(self, CURVE_RESOLUTION=50):
-        counter = 0
-        normalized_path = [(self.__get_x(0), self.__get_y(0))]
-        target_length = self.get_length() / (CURVE_RESOLUTION-1)
+    def set_traffic_light(self, traffic_light, group): # Sets a new Traffic light on the road
+        self.traffic_light = traffic_light
+        self.traffic_light_group = group
+        self.has_traffic_light = True
 
-        for _ in range(CURVE_RESOLUTION-1):
-            t = self.__get_t(counter, target_length, 0.01)
-            normalized_path.append((self.__get_x(t), self.__get_y(t)))
-            if(t == 1): 
-                break
-            else:
-                counter = t
-        return normalized_path
-    
-    def set_traffic_signal(self, traffic_light, group):
-        self.traffic_signal = traffic_light
-        self.traffic_signal_group = group
-        self.has_traffic_signal = True
-
-    def set_vehicle(self, veh):
-        self.vehicles.append(veh)
+    def set_vehicle(self, vehicle): # Saves a new Vehicle in the deque
+        self.vehicles.append(vehicle)
     
     def update(self, delta_time):
         if(len(self.vehicles) > 0):
-            self.vehicles[0].update(None, delta_time, self.message_broker)
-            
-            for i in range(1, len(self.vehicles)):
-                self.vehicles[i].update(self.vehicles[i-1], delta_time, self.message_broker)
+            self.vehicles[0].update(None, delta_time, self.message_broker)  # Update the first vehicle in the list without setting a leader
 
-            if(self.__get_traffic_signal_state):
-                self.vehicles[0].go()
-                for vehicle in self.vehicles:
+            for i in range(1, len(self.vehicles)):
+                self.vehicles[i].update(self.vehicles[i-1], delta_time, self.message_broker)  # Update the remaining vehicles in the list considering the vehicle in front of them as a leader
+
+            if(self.__get_traffic_light_state):  # Check if the traffic light its on green
+                self.vehicles[0].go()  # Allow the first vehicle to move
+                for vehicle in self.vehicles:  # Accelerate all vehicles
                     vehicle.accelerate()
-            else:
-                if(self.traffic_signal.voted == False):
-                    if(len(self.vehicles) > 2 and self.voting_started == False):
+            else:  # If the traffic signal its on red
+                if(self.traffic_light.voted == False):  # Check if the traffic light efectuated a voting
+                    if(len(self.vehicles) > 2 and self.voting_started == False):  # Check if there is more than 2 cars to start a voting match
                         self.voting_started = True
                         logging.info(f"Start Voting in Road: {self.id}")
-                        self.message_broker.add_message(message={"level": "acction_required", "action": "make_vote"})
+                        self.message_broker.add_message(message={"level": "acction_required", "action": "make_vote"})  # Add a message to the message broker to initiate voting
                 
-                if(self.voting_started):
+                if(self.voting_started):  # If the voting process is ongoing
                     votes = []
-                    if(len(self.message_broker.read_messages()) > 3):
-                        for vote in self.message_broker.read_messages():
-                            if(vote.get("action") == "vote"):
-                                votes.append(vote.get("vote"))
+                    if(len(self.message_broker.read_messages()) > 3):  # Check if there are enough votes collected
+                        for vote in self.message_broker.read_messages():  # Iterate over the collected votes
+                            if(vote.get("action") == "vote"):  # Check if the message is a vote
+                                votes.append(vote.get("vote"))  # Append the vote to the list of votes
 
-                        if(votes.count("Change") > votes.count("Maintain")):
-                            self.traffic_signal.set_cycle(voted=True)
-                            self.voting_started = False
-                            self.message_broker.clean_messages()
-                            logging.info("Voting Completed! - Result: Change to Green Light")
+                        if(votes.count("Change") > votes.count("Maintain")):  # Check the voting result
+                            self.traffic_light.set_cycle(voted=True)  # Set the traffic signal cycle to the voted state
+                            self.voting_started = False  # Reset the voting status
+                            self.message_broker.clean_messages()  # Clean up collected messages
+                            logging.info("Voting Completed! - Result: Change to Green Light")  # Log the voting result
                         else:
-                            self.traffic_signal.voted = True
-                            self.voting_started = False
-                            self.message_broker.clean_messages()
-                            logging.info("Voting Completed! - Result: Maintain Red Light")
+                            self.traffic_light.voted = True  # Indicate that the signal has been voted to maintain its state
+                            self.voting_started = False  # Reset the voting status
+                            self.message_broker.clean_messages()  # Clean up collected messages
+                            logging.info("Voting Completed! - Result: Maintain Red Light")  # Log the voting result
 
-                if(self.vehicles[0].x >= self.get_length() - self.traffic_signal.slow_distance):
-                    self.vehicles[0].slow(self.traffic_signal.slow_factor*self.vehicles[0]._max_velocity)
+                if(self.vehicles[0].x >= self.get_length() - self.traffic_light.slow_distance):  # Check if the first vehicle is approaching the slowing point
+                    self.vehicles[0].slow(self.traffic_light.slow_factor*self.vehicles[0]._max_velocity)  # Slow down the first vehicle
 
-                if(self.vehicles[0].x >= self.get_length() - self.traffic_signal.stop_distance and self.vehicles[0].x <= self.get_length() - self.traffic_signal.stop_distance / 2):
-                    self.vehicles[0].stop()
+                if(self.vehicles[0].x >= self.get_length() - self.traffic_light.stop_distance and self.vehicles[0].x <= self.get_length() - self.traffic_light.stop_distance / 2):  # Check if the first vehicle is approaching the stopping point
+                    self.vehicles[0].stop()  # Stop the first vehicle

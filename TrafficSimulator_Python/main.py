@@ -1,11 +1,10 @@
-import asyncio
 from Classes.window_class import Window
 from Classes.simulation_class import Simulation
 from Classes.vehicle_generator import VehicleGenerator
 
-sim = Simulation()
+sim = Simulation() # Initialize simulation Class
 
-#North Fragments
+#North Roads
 I_NORTH_1_RIGHT_ORIGIN = (-10, 40)
 NORTH_1_RIGHT_CHK_1 = (-10, 20)
 I_NORTH_1_RIGHT_CHK_2 = (-10, 10)
@@ -21,7 +20,7 @@ NORTH_3_RIGHT_CHK_1 = (80, 90)
 NORTH_3_RIGHT_CHK_2 = (80, 40)
 NORTH_3_RIGHT_CHK_3 = (80, 20)
 
-#South Fragments
+#South Roads
 SOUTH_RIGHT_ORIGIN = (-50,50)
 I_SOUTH_RIGHT_CHK_1 = (-20, 50)
 SOUTH_RIGHT_CHK_2 = (-10, 50)
@@ -38,7 +37,7 @@ SOUTH_3_RIGHT_ORIGIN = (110, -60)
 SOUTH_3_RIGHT_CHK_1 = (110, -20)
 SOUTH_3_RIGHT_CHK_3 = (110, 0)
 
-#West Fragments
+#West Roads
 I_WEST_1_RIGHT_ORIGIN = (-20, 10)
 WEST_1_RIGHT_CHK_1 = (-50, 10)
 WEST_1_RIGHT_CHK_2 = (100, 10)
@@ -46,7 +45,7 @@ WEST_1_RIGHT_CHK_3 = (70,10)
 WEST_1_RIGHT_CHK_4 = (40, 10)
 WEST_1_RIGHT_CHK_5 = (0, 10)
 
-#East Fragments
+#East Roads
 EAST_1_RIGHT_ORIGIN = (10,-10)
 I_EAST_1_RIGHT_CHK_1 = (100, -10)
 EAST_2_RIGHT_ORIGIN = (-50, -70)
@@ -136,26 +135,27 @@ sim.set_curved_road((70, -70), (80,-60), (80, -70)), # 50
 sim.set_curved_road((80, 40), (70,30), (80, 30)), # 51
 sim.set_curved_road((40, 10), (30, 0), (30, 10)), # 52
 
-# sim.set_traffic_light([[8]])
-sim.set_traffic_light([[8, 25, 30], [42, 38]])
+sim.set_traffic_light([[8, 25, 30], [42, 38]]) # Generate Traffic Lights
 
-vg = VehicleGenerator({
+vehicle_generator = VehicleGenerator({
     'vehicles': [
-        (1, {'path': [0, 1, 2, 3, 46], 'velocity': 33.2}),
-        (1, {'path': [0, 1, 2, 3, 4, 5, 6, 39, 37, 51], 'velocity': 33.2}),
-        (1, {'path': [0, 7, 8, 19, 20, 33, 47], 'velocity': 33.2}),
-        (1, {'path': [0, 7, 8, 19, 20, 21, 22, 49], 'velocity': 33.2}),
+        (1, {'path': [0, 1, 2, 3, 46], 'velocity': 33.2}), # Define Vehicle 1
+        (1, {'path': [0, 1, 2, 3, 4, 5, 6, 39, 37, 51], 'velocity': 33.2}), # Define Vehicle 2
+        (1, {'path': [0, 7, 8, 19, 20, 33, 47], 'velocity': 33.2}), # Define Vehicle 3
+        (1, {'path': [0, 7, 8, 19, 20, 21, 22, 49], 'velocity': 33.2}), # Define Vehicle 4
 
-        (1, {'path': [25, 26, 27, 50], 'velocity': 33.2}),
-        (1, {'path': [25, 26, 27, 28, 29, 30, 31, 32, 40, 41, 52], 'velocity': 33.2}),
-        (1, {'path': [25, 26, 27, 28, 29, 30, 31, 32, 40, 41, 42, 45, 20, 33, 47], 'velocity': 33.2}),
-        (1, {'path': [25, 26, 27, 28, 29, 30, 31, 32, 40, 41, 42, 43, 11, 12, 13, 14, 48], 'velocity': 33.2}),
+        (1, {'path': [25, 26, 27, 50], 'velocity': 33.2}), # Define Vehicle 5
+        (1, {'path': [25, 26, 27, 28, 29, 30, 31, 32, 40, 41, 52], 'velocity': 33.2}), # Define Vehicle 6
+        (1, {'path': [25, 26, 27, 28, 29, 30, 31, 32, 40, 41, 42, 45, 20, 33, 47], 'velocity': 33.2}), # Define Vehicle 7
+        (1, {'path': [25, 26, 27, 28, 29, 30, 31, 32, 40, 41, 42, 43, 11, 12, 13, 14, 48], 'velocity': 33.2}), # Define Vehicle 8
 
-        (1, {'path': [37, 38, 44, 41, 52], 'velocity': 33.2}),
+        (1, {'path': [37, 38, 44, 41, 52], 'velocity': 33.2}), # Define Vehicle 9
         ]
     })
-sim.set_vehicle_generator(vg)
 
+sim.set_vehicle_generator(vehicle_generator) # Save Vehicle Generator Config Parameters
+
+# Open DearPyGUI and Run Simulation
 win = Window(sim)
 win.run()
-win.show()
+win.show() 

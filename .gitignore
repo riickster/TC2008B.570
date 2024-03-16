@@ -38,3 +38,5 @@ TrafficSimulator_Unity/crashlytics-build.properties
 TrafficSimulator_Unity/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
 TrafficSimulator_Unity/[Aa]ssets/[Ss]treamingAssets/aa.meta
 TrafficSimulator_Unity/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+TrafficSimulator_NodeJS/node_modules
